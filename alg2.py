@@ -1,5 +1,5 @@
 import networkx as nx 
-import alg1_parameters as parameters
+import alg2_parameters as parameters
 import random
 import matplotlib.pyplot as plt 
 
