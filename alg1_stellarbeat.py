@@ -24,18 +24,19 @@ def conn_cand_eligible(G, i, j, bumps, target_conns):
 # get the target connection table and all nodes in the quorumset of node pk
 def get_target_conns(network_fetched, pk):
 	node_info = None
-	conns_cands_dict = {}
 
 	for item in network_fetched:
 		if item['publicKey'] == pk:
 			node_info = item
+
 	org_threshold = node_info['quorumSet']['threshold']
-	target_conns_cands = []
+
 	quorumset_all_nodes = []
+	quorumset = []
+
 	for item in node_info['quorumSet']['validators']:
-		target_conns_cands.append(item)
 		quorumset_all_nodes.append(item)
-		conns_cands_dict[str(item)] = 0
+		quorumset.append(item)
 	for item in node_info['quorumSet']['innerQuorumSets']:
 		target_conns_cands.append(item)
 		quorumset_all_nodes.extend(item['validators'])
@@ -91,7 +92,7 @@ def alg1(network_fetched):
 				continue
 
 			rand_cand = random.choice(target_conns[cur_validator][1])
-			try_find_cand_counter = 0
+			try_find_cand_counter = 0    
 			while not conn_cand_eligible(G, cur_validator, rand_cand, bump_ups, target_conns) and try_find_cand_counter < parameters.TRY_FIND_CAND_LIMIT:
 				rand_cand = random.choice(target_conns[cur_validator][1])
 				try_find_cand_counter += 1
