@@ -38,29 +38,13 @@ def get_target_conns(network_fetched, pk):
 		quorumset_all_nodes.append(item)
 		quorumset.append(item)
 	for item in node_info['quorumSet']['innerQuorumSets']:
-		target_conns_cands.append(item)
 		quorumset_all_nodes.extend(item['validators'])
-		conns_cands_dict[str([item['validators'], len(item['validators']) - item['threshold'] + 1])] = 0
-	org_target_conn_num = len(target_conns_cands) - org_threshold + 1
-	target_conns_orgs = random.sample(target_conns_cands, org_target_conn_num)
+		inner_target_conn_num = len(item['validators']) - item['threshold'] + 1
+		quorumset.append([item['validators'], inner_target_conn_num])
 
-	target_conns_by_node = []
-	for item in target_conns_orgs:
-		if isinstance(item, str):
-			target_conns_by_node.append(item)
-			# print(item)
-		else:
-			inner_threshold = item['threshold']
-			inner_target_conn_num = len(item['validators']) - inner_threshold + 1
-			target_conns_in_inner = random.sample(item['validators'], inner_target_conn_num)
-			target_conns_by_node.extend(target_conns_in_inner)
-			# print(target_conns_in_inner)
+	org_target_conn_num = len(quorumset) - org_threshold + 3
 
-	# print(len(target_conns_by_node))
-	# print(conns_cands_dict)
-	# print(quorumset_all_nodes)
-
-	return len(target_conns_by_node), conns_cands_dict, quorumset_all_nodes
+	return quorumset_all_nodes, quorumset, org_target_conn_num
 
 def alg1(network_fetched):
 
@@ -69,22 +53,20 @@ def alg1(network_fetched):
 
 	for item in network_fetched:
 		all_validators.append(item['publicKey'])
-		num_target_conns, conns_cands_dict, quorumset_all_nodes = get_target_conns(network_fetched, item['publicKey'])
-		G.add_node(item['publicKey'], num_target_conns = num_target_conns, conns_cands_dict = conns_cands_dict, quorumset_all_nodes = quorumset_all_nodes, epoch_counter = 0, last_bumpup_at = -1, bump_ups = cur_node_bump_ups)
+		quorumset_all_nodes, quorumset, org_target_conn_num = get_target_conns(network_fetched, item['publicKey'])
+		G.add_node(item['publicKey'], quorumset_all_nodes = quorumset_all_nodes, quorumset = quorumset, org_target_conn_num = org_target_conn_num, last_bumpup_at = -1, bump_ups = cur_node_bump_ups, satisfied = False)
 
-	satisfied_counter = {}
-	for item in all_validators:
-		satisfied_counter[item] = 0
+	epoch_counter = 0
 
 	while True:
 		random.shuffle(all_validators)
-		satisfied_counter = dict.fromkeys(sa, 0)
+		satisfied_counter = 0
 
 		while len(all_validators) > 0:
 			cur_validator = all_validators.pop()
 
-			if sum(G.nodes[cur_validator]['conns_cands_dict'].values()) >= G.nodes[cur_validator]['num_target_conns']:
-				satisfied_counter[cur_validator] = 1
+			if G.nodes[cur_validator]['satisfied']:
+				satisfied_counter += 1
 				if sum(satisfied_counter) == parameters.TOTAL_NUM_OF_VALIDATORS:
 					# nx.draw_networkx(G, with_labels=True)
 					# plt.show()
