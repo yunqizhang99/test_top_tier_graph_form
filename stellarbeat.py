@@ -77,3 +77,6 @@ def get_validators(update=False) -> list:
 def get_validators_from_file(path) -> list:
     with open(path, 'r', encoding='utf-8') as f:
         return json.load(f)
+
+if __name__=="__main__": 
+    print(_fetch_from_url())

@@ -43,8 +43,8 @@ def alg1():
 			if len([peer for peer in list(nx.all_neighbors(G, cur_validator)) if peer in target_conns[cur_validator][1]]) >= target_conns[cur_validator][0]:
 				satisfied_counter[cur_validator] = 1
 				if sum(satisfied_counter) == parameters.TOTAL_NUM_OF_VALIDATORS:
-					# nx.draw_networkx(G, with_labels=True)
-					# plt.show()
+					nx.draw_networkx(G, with_labels=True)
+					plt.show()
 					return "CONVERGED, " + "EPOCH: " + str(epoch_counter) + " " + "SATISFIED: " + str(satisfied_counter), G
 				continue
 
@@ -64,33 +64,35 @@ def alg1():
 			plt.show()
 
 		epoch_counter += 1
-		# print("EPOCH: " + str(epoch_counter) + " " + "SATISFIED: " + str(satisfied_counter))
+		print("EPOCH: " + str(epoch_counter) + " " + "SATISFIED: " + str(satisfied_counter))
 		if epoch_counter > 10 and epoch_counter - last_bumpup_at > parameters.CAN_BUMP_UP:
 			bump_ups += 1
-			# print("BUMPED!")
+			print("BUMPED!")
 			last_bumpup_at = epoch_counter
 
 		all_validators = parameters.ALL_VALIDATORS.copy()
 
 if __name__=="__main__": 
-	max_degs = []
-	avg_degs = []
-	diameters = []
-	min_v_cuts = []
-	for i in range(0, 1000):
-		print(i)
-		s, G = alg1()
-		G_degs = []
-		for node in G:
-			G_degs.append(G.degree[node])
-		avg_degs.append(sum(G_degs)/len(G_degs))
-		max_degs.append(max(G_degs))
-		diameters.append(nx.diameter(G))
-		min_v_cuts.append(len(nx.minimum_node_cut(G)))
-	fig, axes = plt.subplots(1, 4)
-	axes[0].hist(max_degs)
-	axes[1].hist(avg_degs)
-	axes[2].hist(diameters)
-	axes[3].hist(min_v_cuts)
-	plt.show()
+	s, G = alg1()
+	print(s)
+	# max_degs = []
+	# avg_degs = []
+	# diameters = []
+	# min_v_cuts = []
+	# for i in range(0, 1000):
+	# 	print(i)
+	# 	s, G = alg1()
+	# 	G_degs = []
+	# 	for node in G:
+	# 		G_degs.append(G.degree[node])
+	# 	avg_degs.append(sum(G_degs)/len(G_degs))
+	# 	max_degs.append(max(G_degs))
+	# 	diameters.append(nx.diameter(G))
+	# 	min_v_cuts.append(len(nx.minimum_node_cut(G)))
+	# fig, axes = plt.subplots(1, 4)
+	# axes[0].hist(max_degs)
+	# axes[1].hist(avg_degs)
+	# axes[2].hist(diameters)
+	# axes[3].hist(min_v_cuts)
+	# plt.show()
 
