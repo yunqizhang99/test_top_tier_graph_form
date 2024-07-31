@@ -5,6 +5,17 @@ import matplotlib.pyplot as plt
 import stellarbeat
 import ast
 
+def rank_orgs_with_preference(G, i):
+	preference_dict = {}
+	for p in range(0, len(G.nodes[i]['quorumset'])):
+		if isinstance(G.nodes[i]['quorumset'][p], str):
+			preference_dict[p] = 1 - G.nodes[i]['org_conn_book'][p]
+		else:
+			preference_dict[p] = G.nodes[i]['quorumset'][p][1] - G.nodes[i]['org_conn_book'][p]
+	sorted_preference_dict = {k: v for k, v in sorted(preference_dict.items(), key=lambda item: item[1])}
+	sorted_preference_dict = {k: v for k, v in sorted_preference_dict.items() if v != 0}
+	return list(sorted_preference_dict.keys())
+
 # for validator i, check if it is ok to connect to one validator in org with index j in its quorumset
 def conn_org_eligible(G, i, j):
 	if isinstance(G.nodes[i]['quorumset'][j], str):
@@ -107,12 +118,15 @@ def alg1(network_fetched):
 
 			rand_cand_validator = None
 
-			rand_cand_org = random.randint(0, len(G.nodes[cur_validator]['quorumset'])-1)
-			try_find_cand_counter = 0
-			while not conn_org_eligible(G, cur_validator, rand_cand_org) and try_find_cand_counter <= len(G.nodes[cur_validator]['quorumset'])*2:
-				rand_cand_org = random.randint(0, len(G.nodes[cur_validator]['quorumset'])-1)
-				try_find_cand_counter += 1
-			if try_find_cand_counter > len(G.nodes[cur_validator]['quorumset'])*2:
+			orgs_ranked = rank_orgs_with_preference(G, cur_validator)
+
+			if len(orgs_ranked) == 0:
+				continue
+
+			rand_cand_org = orgs_ranked.pop(0)
+			while not conn_org_eligible(G, cur_validator, rand_cand_org) and len(orgs_ranked) > 0:
+				rand_cand_org = orgs_ranked.pop(0)
+			if len(orgs_ranked) == 0:
 				continue
 
 			if not isinstance(G.nodes[cur_validator]['quorumset'][rand_cand_org], str):
