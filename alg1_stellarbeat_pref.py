@@ -22,13 +22,10 @@ def conn_org_eligible(G, i, j):
 		return not G.has_edge(i, G.nodes[i]['quorumset'][j]) and i != G.nodes[i]['quorumset'][j] and i in G.nodes[G.nodes[i]['quorumset'][j]]['quorumset_all_nodes']
 	else:
 		return G.nodes[i]['org_conn_book'][j] < G.nodes[i]['quorumset'][j][1]
-
+		
 # for validator i, check if it is ok to connect to validator j
 def conn_cand_eligible(G, i, j):
 	if i == j or G.has_edge(i, j) or i not in G.nodes[j]['quorumset_all_nodes']:
-		return False, None
-	i_table = list(nx.all_neighbors(G, i))
-	if j in i_table:
 		return False, None
 	i_org_in_j = None
 	i_org_in_j_index = -1
