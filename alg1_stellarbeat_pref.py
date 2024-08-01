@@ -19,13 +19,21 @@ def rank_orgs_with_preference(G, i):
 # for validator i, check if it is ok to connect to one validator in org with index j in its quorumset
 def conn_org_eligible(G, i, j):
 	if isinstance(G.nodes[i]['quorumset'][j], str):
+		if i not in G.nodes[G.nodes[i]['quorumset'][j]]['quorumset_all_nodes']:
+			G.nodes[i]['blacklist'].append(G.nodes[G.nodes[i]['quorumset'][j]])
 		return not G.has_edge(i, G.nodes[i]['quorumset'][j]) and i != G.nodes[i]['quorumset'][j] and i in G.nodes[G.nodes[i]['quorumset'][j]]['quorumset_all_nodes']
 	else:
-		return G.nodes[i]['org_conn_book'][j] < G.nodes[i]['quorumset'][j][1]
+		non_blacklist_node_in_j = False
+		for item in G.nodes[i]['quorumset'][j][0]:
+			if i in G.nodes[item]['quorumset_all_nodes']:
+				non_blacklist_node_in_j = True
+		return G.nodes[i]['org_conn_book'][j] < G.nodes[i]['quorumset'][j][1] and non_blacklist_node_in_j
 		
 # for validator i, check if it is ok to connect to validator j
 def conn_cand_eligible(G, i, j):
 	if i == j or G.has_edge(i, j) or i not in G.nodes[j]['quorumset_all_nodes']:
+		if i not in G.nodes[j]['quorumset_all_nodes']:
+			G.nodes[i]['blacklist'].append(j)
 		return False, None
 	i_org_in_j = None
 	i_org_in_j_index = -1
@@ -83,7 +91,7 @@ def alg1(network_fetched):
 		all_validators.append(item['publicKey'])
 		quorumset_all_nodes, quorumset, org_target_conn_num = get_target_conns(network_fetched, item['publicKey'])
 		org_conn_book = [0] * len(quorumset)
-		G.add_node(item['publicKey'], quorumset_all_nodes = quorumset_all_nodes, quorumset = quorumset, org_target_conn_num = org_target_conn_num, org_conn_book = org_conn_book, last_bumpup_at = 0, bump_ups = 0)
+		G.add_node(item['publicKey'], quorumset_all_nodes = quorumset_all_nodes, quorumset = quorumset, org_target_conn_num = org_target_conn_num, org_conn_book = org_conn_book, blacklist = [], last_bumpup_at = 0, bump_ups = 0)
 
 	epoch_counter = 0
 
@@ -152,8 +160,8 @@ def alg1(network_fetched):
 
 		epoch_counter += 1
 		print("EPOCH: " + str(epoch_counter) + ", SATISFIED VALIDATORS: " + str(sum(satisfied_counter.values())))
-		if epoch_counter == 100:
-			nx.draw_networkx(G, with_labels=False)
+		if epoch_counter == 400:
+			nx.draw_networkx(G, with_labels=True)
 			plt.show()
 
 		all_validators_copy = all_validators.copy()
