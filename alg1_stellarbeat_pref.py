@@ -4,6 +4,15 @@ import random
 import matplotlib.pyplot as plt
 import stellarbeat
 import ast
+import sys, os
+
+# disable printing
+def block_print():
+    sys.stdout = open(os.devnull, 'w')
+
+# restore printing
+def enable_print():
+    sys.stdout = sys.__stdout__
 
 def rank_orgs_with_preference(G, i):
 	preference_dict = {}
@@ -113,6 +122,10 @@ def alg1(network_fetched):
 						cur_validator_num_satisfied_orgs += 1
 			if cur_validator_num_satisfied_orgs >= G.nodes[cur_validator]['org_target_conn_num']:
 				satisfied_counter[cur_validator] = 1
+				if epoch_counter > 20 and epoch_counter - G.nodes[cur_validator]['last_bumpup_at'] > parameters.CAN_BUMP_UP:
+					G.nodes[cur_validator]['bump_ups'] += 1
+					print("BUMPED!")
+					G.nodes[cur_validator]['last_bumpup_at'] = epoch_counter
 				# if all validators are satisfied
 				if sum(satisfied_counter.values()) == total_num_validators:
 					# nx.draw_networkx(G, with_labels=True)
@@ -153,24 +166,33 @@ def alg1(network_fetched):
 			G.nodes[rand_cand_validator]['org_conn_book'][cur_validator_in_rand_cand_validator_org_index] += 1
 
 			# print("EPOCH: " + str(epoch_counter) + " " + "SATISFIED: " + str(satisfied_counter))
-			if epoch_counter > 20 and epoch_counter - G.nodes[cur_validator]['last_bumpup_at'] > parameters.CAN_BUMP_UP:
-				G.nodes[cur_validator]['bump_ups'] += 1
-				# print("BUMPED!")
-				G.nodes[cur_validator]['last_bumpup_at'] = epoch_counter
 
 		epoch_counter += 1
 		print("EPOCH: " + str(epoch_counter) + ", SATISFIED VALIDATORS: " + str(sum(satisfied_counter.values())))
 		if epoch_counter == 400:
-			nx.draw_networkx(G, with_labels=True)
+			largest_cc = max(nx.connected_components(G), key=len)
+			top_tier_G = G.subgraph(largest_cc).copy()
+			nx.draw_networkx(top_tier_G, with_labels=False)
 			plt.show()
+			top_tier_G_max_deg = 0
+			top_tier_G_sum_deg = 0
+			for node in top_tier_G:
+				if top_tier_G.degree[node] > top_tier_G_max_deg:
+					top_tier_G_max_deg = top_tier_G.degree[node]
+				top_tier_G_sum_deg += top_tier_G.degree[node]
+			top_tier_G_avg_deg = top_tier_G_sum_deg/top_tier_G.number_of_nodes()
+			return top_tier_G, nx.diameter(top_tier_G), top_tier_G_max_deg, top_tier_G_avg_deg
 
 		all_validators_copy = all_validators.copy()
 
 if __name__=="__main__": 
-	network_fetched = stellarbeat._fetch_from_url()
+	network_fetched = stellarbeat._fetch_with_fake_nodes_wPref()
 
-	alg1(network_fetched)
-
+	for i in range(1, 101):
+		block_print()
+		top_tier_G, diameter, max_deg, avg_deg = alg1(network_fetched)
+		enable_print()
+		print("Experiment" + str(i) + ", Diameter: " + str(diameter) + ", Max Degree: " + str(max_deg) + ", Avg Degree: " +str(avg_deg))
 
 	# print("---")
 	# print(quorumset_all_nodes)

@@ -94,6 +94,10 @@ def alg1(network_fetched):
 						cur_validator_num_satisfied_orgs += 1
 			if cur_validator_num_satisfied_orgs >= G.nodes[cur_validator]['org_target_conn_num']:
 				satisfied_counter[cur_validator] = 1
+				if epoch_counter > 20 and epoch_counter - G.nodes[cur_validator]['last_bumpup_at'] > parameters.CAN_BUMP_UP:
+					G.nodes[cur_validator]['bump_ups'] += 1
+					print("BUMPED!")
+					G.nodes[cur_validator]['last_bumpup_at'] = epoch_counter
 				# if all validators are satisfied
 				if sum(satisfied_counter.values()) == total_num_validators:
 					# nx.draw_networkx(G, with_labels=True)
@@ -131,10 +135,6 @@ def alg1(network_fetched):
 			G.nodes[rand_cand_validator]['org_conn_book'][cur_validator_in_rand_cand_validator_org_index] += 1
 
 			# print("EPOCH: " + str(epoch_counter) + " " + "SATISFIED: " + str(satisfied_counter))
-			if epoch_counter > 20 and epoch_counter - G.nodes[cur_validator]['last_bumpup_at'] > parameters.CAN_BUMP_UP:
-				G.nodes[cur_validator]['bump_ups'] += 1
-				# print("BUMPED!")
-				G.nodes[cur_validator]['last_bumpup_at'] = epoch_counter
 
 		epoch_counter += 1
 		print("EPOCH: " + str(epoch_counter) + ", SATISFIED VALIDATORS: " + str(sum(satisfied_counter.values())))
